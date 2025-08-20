@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 
 class GroceryListItem extends StatelessWidget {
@@ -8,17 +8,10 @@ class GroceryListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Row(
-        children: [
-          Container(width: 20, height: 20, color: item.category.color),
-          SizedBox(width: 20),
-          Text(item.name),
-          Spacer(),
-          Text(item.quantity.toString()),
-        ],
-      ),
+    return ListTile(
+      title: Text(item.name),
+      leading: Container(width: 24, height: 24, color: item.category.color),
+      trailing: Text(item.quantity.toString()),
     );
   }
 }
