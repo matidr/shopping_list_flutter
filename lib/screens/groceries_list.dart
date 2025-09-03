@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 import 'package:shopping_list/widgets/groceries_empty.dart';
 import 'package:shopping_list/widgets/grocery_item.dart';
@@ -14,7 +18,39 @@ class GroceriesListScreen extends StatefulWidget {
 }
 
 class _GroceriesListScreenState extends State<GroceriesListScreen> {
-  final List<GroceryItem> _groceryItems = [];
+  List<GroceryItem> _groceryItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  void _loadItems() async {
+    final url = Uri.https(
+      'flutter-prep-6466e-default-rtdb.firebaseio.com',
+      'shopping-list.json',
+    );
+
+    final response = await http.get(url);
+    final Map<String, dynamic> listData = json.decode(response.body);
+    setState(() {
+      _groceryItems = listData.entries
+          .map(
+            (item) => GroceryItem(
+              id: item.key,
+              name: item.value['name'],
+              quantity: item.value['quantity'],
+              category: categories.entries
+                  .firstWhere(
+                    (element) => element.value.name == item.value['category'],
+                  )
+                  .value,
+            ),
+          )
+          .toList();
+    });
+  }
 
   void _addItem() async {
     final newItem = await Navigator.of(
@@ -64,9 +100,7 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
                 color: Theme.of(
                   context,
                 ).colorScheme.error.withValues(alpha: 0.75),
-                margin: EdgeInsets.symmetric(
-                  horizontal: 20,
-                ),
+                margin: EdgeInsets.symmetric(horizontal: 20),
               ),
               key: ValueKey(_groceryItems[index].id),
               onDismissed: (direction) {
