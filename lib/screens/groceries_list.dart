@@ -6,6 +6,7 @@ import 'package:shopping_list/data/categories.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 import 'package:shopping_list/widgets/groceries_empty.dart';
 import 'package:shopping_list/widgets/grocery_item.dart';
+import 'package:shopping_list/widgets/loading_spinner.dart';
 import 'package:shopping_list/widgets/new_item.dart';
 
 class GroceriesListScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class GroceriesListScreen extends StatefulWidget {
 
 class _GroceriesListScreenState extends State<GroceriesListScreen> {
   List<GroceryItem> _groceryItems = [];
+  var _isLoading = true;
 
   @override
   void initState() {
@@ -49,6 +51,7 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
             ),
           )
           .toList();
+      _isLoading = false;
     });
   }
 
@@ -92,7 +95,9 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
   @override
   Widget build(BuildContext context) {
     final Widget widget = _groceryItems.isEmpty
-        ? GroceriesEmpty()
+        ? _isLoading
+              ? LoadingSpinner()
+              : GroceriesEmpty()
         : ListView.builder(
             itemCount: _groceryItems.length,
             itemBuilder: (context, index) => Dismissible(
