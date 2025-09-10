@@ -21,6 +21,7 @@ class GroceriesListScreen extends StatefulWidget {
 class _GroceriesListScreenState extends State<GroceriesListScreen> {
   List<GroceryItem> _groceryItems = [];
   var _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -33,8 +34,21 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
       'flutter-prep-6466e-default-rtdb.firebaseio.com',
       'shopping-list.json',
     );
-
     final response = await http.get(url);
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _error = "Failed to fetch data. Please try again later";
+      });
+    }
+
+    if (response.body == 'null') {
+      return;
+    }
+
     final Map<String, dynamic> listData = json.decode(response.body);
     setState(() {
       _groceryItems = listData.entries
@@ -51,7 +65,6 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
             ),
           )
           .toList();
-      _isLoading = false;
     });
   }
 
@@ -71,9 +84,15 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
 
   void _removeItem(GroceryItem item) {
     final groceryItemIndex = _groceryItems.indexOf(item);
+    final url = Uri.https(
+      'flutter-prep-6466e-default-rtdb.firebaseio.com',
+      'shopping-list/${item.id}.json',
+    );
+    http.delete(url);
     setState(() {
       _groceryItems.remove(item);
     });
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -94,26 +113,29 @@ class _GroceriesListScreenState extends State<GroceriesListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Widget widget = _groceryItems.isEmpty
-        ? _isLoading
-              ? LoadingSpinner()
-              : GroceriesEmpty()
-        : ListView.builder(
-            itemCount: _groceryItems.length,
-            itemBuilder: (context, index) => Dismissible(
-              background: Container(
-                color: Theme.of(
-                  context,
-                ).colorScheme.error.withValues(alpha: 0.75),
-                margin: EdgeInsets.symmetric(horizontal: 20),
-              ),
-              key: ValueKey(_groceryItems[index].id),
-              onDismissed: (direction) {
-                _removeItem(_groceryItems[index]);
-              },
-              child: GroceryListItem(item: _groceryItems[index]),
-            ),
-          );
+    Widget widget = LoadingSpinner();
+    if (_error != null) {
+      widget = Center(child: Text(_error!));
+    }
+
+    if (_groceryItems.isEmpty) {
+      widget = GroceriesEmpty();
+    } else {
+      widget = ListView.builder(
+        itemCount: _groceryItems.length,
+        itemBuilder: (context, index) => Dismissible(
+          background: Container(
+            color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75),
+            margin: EdgeInsets.symmetric(horizontal: 20),
+          ),
+          key: ValueKey(_groceryItems[index].id),
+          onDismissed: (direction) {
+            _removeItem(_groceryItems[index]);
+          },
+          child: GroceryListItem(item: _groceryItems[index]),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
